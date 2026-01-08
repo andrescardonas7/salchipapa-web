@@ -1,0 +1,9 @@
+{
+  "conversation_id": "string",
+  "generation_id": "string",
+  "model": "string",
+  "hook_event_name": "string",
+  "cursor_version": "string",
+  "workspace_roots": ["<path>"],
+  "user_email": "string | null"
+}

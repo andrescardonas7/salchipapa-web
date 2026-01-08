@@ -1,0 +1,190 @@
+---
+alwaysApply: true
+---
+# Security Standards
+
+## Input Validation
+
+**Rule**: All external inputs must be validated and sanitized.
+
+**Actions**:
+- ✅ Validate API inputs with schema validators (Zod, Yup, Joi)
+- ✅ Sanitize HTML/DOM content (DOMPurify)
+- ✅ Use parameterized queries for databases
+- 🚫 Never trust user input
+
+**Example**:
+
+```typescript
+// ✅ Input validation with Zod
+import { z } from 'zod';
+
+const UserSchema = z.object({
+  email: z.string().email(),
+  age: z.number().int().min(18).max(120),
+});
+
+function createUser(input: unknown) {
+  const validated = UserSchema.parse(input); // Throws if invalid
+  // Safe to use validated.email and validated.age
+}
+```
+
+## XSS Prevention
+
+**Rule**: Sanitize all user-generated content before rendering.
+
+**Example**:
+
+```typescript
+// ❌ Vulnerable to XSS
+function renderUserContent(content: string) {
+  return <div dangerouslySetInnerHTML={{ __html: content }} />;
+}
+
+// ✅ Sanitized
+import DOMPurify from 'dompurify';
+
+function renderUserContent(content: string) {
+  const sanitized = DOMPurify.sanitize(content);
+  return <div dangerouslySetInnerHTML={{ __html: sanitized }} />;
+}
+```
+
+## SQL Injection Prevention
+
+**Rule**: Always use parameterized queries or ORM methods.
+
+**Example**:
+
+```typescript
+// ❌ Vulnerable to SQL injection
+const query = `SELECT * FROM users WHERE id = ${userId}`;
+
+// ✅ Parameterized query
+const query = 'SELECT * FROM users WHERE id = ?';
+db.query(query, [userId]);
+
+// ✅ ORM (TypeORM example)
+const user = await userRepository.findOne({ where: { id: userId } });
+```
+
+## Secret Management
+
+**Rule**: Never commit secrets, tokens, or credentials.
+
+**Actions**:
+- ✅ Store secrets in environment variables (never in code)
+- ✅ Use `.env.example` to document required variables
+- ✅ Use vault in CI (GitHub Secrets, AWS Secrets Manager)
+- ✅ Rotate keys at least every 90 days
+- 🚫 Never expose `.env` files to frontend bundles
+- 🚫 Never commit `.env` files
+
+**Secret Detection**: Use `git-secrets` or `truffleHog` in CI:
+
+```bash
+# .git/hooks/pre-commit
+git-secrets --scan
+```
+
+## Dependency Security
+
+**Rule**: Keep dependencies updated and scan for vulnerabilities.
+
+**Actions**:
+- ✅ Enable Dependabot or Renovate for automatic PRs
+- ✅ Run `pnpm audit` in CI before merge
+- ✅ Use SCA tools (Snyk, GitHub Security)
+- ✅ Review and update dependencies quarterly
+
+**CI Check**:
+
+```bash
+pnpm audit --audit-level=moderate
+```
+
+## HTTP Security
+
+**Rule**: Always use HTTPS and configure security headers.
+
+**Actions**:
+- ✅ Always use HTTPS for network requests
+- ✅ Configure security headers:
+  - `Content-Security-Policy`
+  - `Strict-Transport-Security`
+  - `X-Content-Type-Options: nosniff`
+  - `Referrer-Policy: strict-origin-when-cross-origin`
+  - `Permissions-Policy`
+
+**Example** (Express.js):
+
+```typescript
+app.use((req, res, next) => {
+  res.setHeader('Content-Security-Policy', "default-src 'self'");
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  next();
+});
+```
+
+## CORS Configuration
+
+**Rule**: CORS must use strict allowlist (never wildcard).
+
+**Example**:
+
+```typescript
+// ❌ Insecure
+app.use(cors());
+
+// ✅ Secure with allowlist
+app.use(cors({
+  origin: ['https://example.com', 'https://app.example.com'],
+  credentials: true,
+}));
+```
+
+## Command Execution
+
+**Rule**: Never execute user input as shell commands.
+
+**Example**:
+
+```typescript
+// ❌ Vulnerable to command injection
+execSync(`npm install ${packageName}`);
+
+// ✅ Safe execution
+import { execFileSync } from 'child_process';
+execFileSync('npm', ['install', packageName], { encoding: 'utf8' });
+```
+
+## Authentication & Authorization
+
+**Rule**: Implement secure authentication with proper token handling.
+
+**Actions**:
+- ✅ Use JWT with expiration (max 15 minutes for access tokens)
+- ✅ Hash passwords with bcrypt (cost factor ≥12)
+- ✅ Implement refresh token rotation
+- ✅ Validate JWT signatures and expiration
+- 🚫 Never store passwords in plain text
+
+## OWASP Top 10 Review
+
+**Rule**: Perform quarterly security review against OWASP Top 10.
+
+**Checklist**:
+- [ ] Injection (SQL, NoSQL, Command)
+- [ ] Broken Authentication
+- [ ] Sensitive Data Exposure
+- [ ] XML External Entities (XXE)
+- [ ] Broken Access Control
+- [ ] Security Misconfiguration
+- [ ] XSS (Cross-Site Scripting)
+- [ ] Insecure Deserialization
+- [ ] Using Components with Known Vulnerabilities
+- [ ] Insufficient Logging & Monitoring
+
+**Reference**: https://owasp.org/www-project-top-ten/

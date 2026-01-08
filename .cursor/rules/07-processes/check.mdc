@@ -1,0 +1,67 @@
+---
+alwaysApply: true
+---
+
+# Check
+
+Perform comprehensive code quality and security checks.
+
+## Primary Task:
+
+Run `pnpm run check` (or project-specific check command) and resolve any resulting errors.
+
+## Important:
+
+- DO NOT commit any code during this process
+- DO NOT change version numbers
+- Focus only on fixing issues identified by checks
+
+## Common Checks Include:
+
+1. **Linting**: Code style and syntax errors
+2. **Type Checking**: TypeScript/Flow type errors
+3. **Unit Tests**: Failing test cases
+4. **Security Scan**: Vulnerability detection
+5. **Code Formatting**: Style consistency
+6. **Build Verification**: Compilation errors
+
+## Process:
+
+1. Run the check command
+2. Analyze output for errors and warnings
+3. Fix issues in priority order:
+   - Build-breaking errors first
+   - Test failures
+   - Linting errors
+   - Warnings
+4. Re-run checks after each fix
+5. Continue until all checks pass
+
+## For Different Project Types:
+
+- **JavaScript/TypeScript**: `pnpm run check` or `yarn check`
+- **Python**: `black`, `isort`, `flake8`, `mypy`
+- **Rust**: `cargo check`, `cargo clippy`
+- **Go**: `go vet`, `golint`
+- **Swift**: `swift-format`, `swiftlint`
+
+---
+
+## Before You Start
+
+1. Ensure your working tree is clean: `git status` should show no pending changes.
+2. Pull the latest changes from `main` (or default branch).
+3. Verify you are using the correct runtime/toolchain versions (Node, Python, Go, etc.).
+4. Install dependencies with the project's package manager (e.g., `pnpm i`, `pip install -r requirements.txt`).
+5. If necessary, stash or shelve unrelated changes before running checks.
+
+## During Fixing
+
+- Keep fixes minimal and scoped strictly to errors reported by the check command.
+- Prefer small, incremental changes; rerun checks after each logical fix.
+- If a warning cannot be resolved quickly, add a TODO comment referencing an issue number.
+- Never bump library versions unless explicitly required by the team.
+
+## After All Checks Pass
+
+1. Create a single, clean commit containing only the fixes

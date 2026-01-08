@@ -1,0 +1,19 @@
+---
+description: "Estándares de Code Health con CodeScene"
+globs: ["**/*.{js,ts,py,java}"]
+alwaysApply: true
+---
+
+# Estándares CodeScene
+
+## Code Health Mínimo
+- Score mínimo aceptable: 6.0
+- Funciones: máximo 50 líneas
+- Complejidad ciclomática: <10
+
+## Hotspots
+- Revisar archivos con alta frecuencia de cambios
+- Priorizar refactorización de hotspots críticos
+
+## Antes de cada PR
+- Verificar que CodeScene no reporte violaciones críticas
