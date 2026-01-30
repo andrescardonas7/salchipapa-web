@@ -1,0 +1,92 @@
+// Prisma schema for Salchipapa Voting Platform
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Negocios participantes
+model Business {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  imageUrl  String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  votes     Vote[]
+
+  @@map("businesses")
+}
+
+// Votantes registrados
+model Voter {
+  id         String    @id @default(cuid())
+  name       String
+  phoneE164  String    @unique @map("phone_e164")
+  phoneHash  String    @map("phone_hash")
+  verifiedAt DateTime? @map("verified_at")
+  createdAt  DateTime  @default(now())
+  vote       Vote?
+
+  @@index([phoneHash])
+  @@map("voters")
+}
+
+// Códigos OTP
+model Otp {
+  id         String    @id @default(cuid())
+  phoneE164  String    @map("phone_e164")
+  codeHash   String    @map("code_hash")
+  expiresAt  DateTime  @map("expires_at")
+  attempts   Int       @default(0)
+  sentAt     DateTime  @default(now()) @map("sent_at")
+  verifiedAt DateTime? @map("verified_at")
+  createdAt  DateTime  @default(now())
+
+  @@index([phoneE164, expiresAt])
+  @@map("otps")
+}
+
+// Votos registrados
+model Vote {
+  id            String   @id @default(cuid())
+  voterId       String   @unique @map("voter_id")
+  businessId    String   @map("business_id")
+  ipHash        String?  @map("ip_hash")
+  userAgentHash String?  @map("user_agent_hash")
+  createdAt     DateTime @default(now())
+
+  voter    Voter    @relation(fields: [voterId], references: [id])
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@index([businessId])
+  @@map("votes")
+}
+
+// Eventos de auditoría
+model AuditEvent {
+  id        String   @id @default(cuid())
+  eventType String   @map("event_type")
+  phoneE164 String?  @map("phone_e164")
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([eventType])
+  @@index([phoneE164])
+  @@map("audit_events")
+}
+
+// Configuración del sistema (flags)
+model SystemConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("system_config")
+}

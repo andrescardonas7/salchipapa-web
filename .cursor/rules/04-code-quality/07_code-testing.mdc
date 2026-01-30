@@ -1,9 +1,6 @@
 ---
-description: Testing standards and coverage requirements
-globs: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx']
 alwaysApply: true
 ---
-
 # Testing Standards
 
 ## Coverage Requirements

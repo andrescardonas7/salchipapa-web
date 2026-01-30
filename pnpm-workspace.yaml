@@ -1,0 +1,7 @@
+packages:
+  - '.'
+
+# pnpm v10+ blocks dependency install scripts unless explicitly allowed.
+# Sentry source map upload relies on @sentry/cli postinstall.
+allowBuilds:
+  '@sentry/cli': true

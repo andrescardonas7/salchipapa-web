@@ -1,0 +1,10 @@
+---
+description: "DEPRECATED - Use language-agnostic-patterns.mdc instead"
+alwaysApply: false
+---
+
+# DEPRECATED
+
+This file has been replaced by `language-agnostic-patterns.mdc`.
+
+The content has been moved and is now a requestable skill (not always-applied) to reduce context overhead.

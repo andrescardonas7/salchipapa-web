@@ -1,65 +1,224 @@
-import Image from "next/image";
+'use client';
+
+import { AlreadyVoted } from '@/components/AlreadyVoted';
+import { BusinessSelect } from '@/components/BusinessSelect';
+import { OtpVerify } from '@/components/OtpVerify';
+import { PhoneEntry } from '@/components/PhoneEntry';
+import { StepIndicator } from '@/components/StepIndicator';
+import { VoteSuccess } from '@/components/VoteSuccess';
+import Image from 'next/image';
+import { useEffect, useState } from 'react';
+
+type Step = 'entry' | 'otp' | 'select' | 'success' | 'already-voted';
+
+interface Business {
+  id: string;
+  name: string;
+  slug: string;
+  imageUrl: string | null;
+}
 
 export default function Home() {
+  const [step, setStep] = useState<Step>('entry');
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Verificar estado de sesión al cargar
+  useEffect(() => {
+    async function checkSession() {
+      try {
+        const res = await fetch('/api/vote');
+        const data = await res.json();
+
+        if (data.hasVoted) {
+          setStep('already-voted');
+        } else if (data.verified) {
+          // Tiene sesión verificada, puede votar
+          setStep('select');
+        }
+      } catch (error) {
+        console.error('Error checking session:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    checkSession();
+  }, []);
+
+  // Cargar negocios
+  useEffect(() => {
+    async function loadBusinesses() {
+      try {
+        const res = await fetch('/api/businesses');
+        const data = await res.json();
+        if (data.businesses) {
+          setBusinesses(data.businesses);
+        }
+      } catch (error) {
+        console.error('Error loading businesses:', error);
+      }
+    }
+    loadBusinesses();
+  }, []);
+
+  const handleEmailSubmit = (submittedEmail: string, submittedName: string) => {
+    setEmail(submittedEmail);
+    setName(submittedName);
+    setStep('otp');
+  };
+
+  const handleOtpVerified = () => {
+    setStep('select');
+  };
+
+  const handleVoted = () => {
+    setStep('success');
+  };
+
+  const getCurrentStepNumber = () => {
+    switch (step) {
+      case 'entry':
+        return 1;
+      case 'otp':
+        return 2;
+      case 'select':
+        return 3;
+      case 'success':
+      case 'already-voted':
+        return 3;
+      default:
+        return 1;
+    }
+  };
+
+  const showStepIndicator = step !== 'success' && step !== 'already-voted';
+
+  // Skeleton para el estado de carga inicial - evita CLS al mantener layout estable
+  const renderMainContent = () => {
+    if (isLoading) {
+      return (
+        <div className='card animate-pulse'>
+          <div className='h-6 bg-card-border rounded w-3/4 mb-4'></div>
+          <div className='h-4 bg-card-border rounded w-full mb-6'></div>
+          <div className='space-y-4'>
+            <div className='h-12 bg-card-border rounded'></div>
+            <div className='h-12 bg-card-border rounded'></div>
+            <div className='h-12 bg-card-border rounded'></div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        {step === 'entry' && <PhoneEntry onSubmit={handleEmailSubmit} />}
+
+        {step === 'otp' && (
+          <OtpVerify
+            email={email}
+            name={name}
+            onVerified={handleOtpVerified}
+            onBack={() => setStep('entry')}
+          />
+        )}
+
+        {step === 'select' && (
+          <BusinessSelect
+            businesses={businesses}
+            onVoted={handleVoted}
+            onAlreadyVoted={() => setStep('already-voted')}
+          />
+        )}
+
+        {step === 'success' && <VoteSuccess />}
+
+        {step === 'already-voted' && <AlreadyVoted />}
+      </>
+    );
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+    <main className='min-h-screen relative overflow-hidden salchi-pattern'>
+      {/* Background decoration */}
+      <div className='absolute inset-0 overflow-hidden pointer-events-none'>
+        <div className='absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl'></div>
+        <div className='absolute -bottom-40 -left-40 w-80 h-80 bg-secondary/10 rounded-full blur-3xl'></div>
+      </div>
+
+      {/* Content */}
+      <div className='relative z-10 max-w-lg mx-auto px-4 py-8 min-h-screen flex flex-col'>
+        {/* Header */}
+        <header className='text-center mb-4'>
+          <div className='mb-2 flex justify-center'>
             <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+              src='/oficial/logo-oficial.PNG'
+              alt='Logo oficial del evento'
+              width={220}
+              height={220}
+              priority
+              className='h-auto w-[180px] sm:w-[220px]'
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
+          <h1 className='text-3xl md:text-4xl font-bold mb-2'>
+            <span className='gradient-text'>
+              Tercer Desafío de la Salchipapa
+            </span>
+          </h1>
+          <p className='text-muted'>
+            🏆 Vota y ayuda a elegir la mejor salchipapa de Cartago
+          </p>
+        </header>
+
+        {/* Step indicator - wrapper con altura fija para evitar CLS */}
+        <div className='min-h-[52px] flex items-center justify-center mb-0'>
+          {showStepIndicator && (
+            <StepIndicator
+              currentStep={getCurrentStepNumber()}
+              totalSteps={3}
+            />
+          )}
         </div>
-      </main>
-    </div>
+
+        {/* Main content */}
+        <div className='flex-1 flex flex-col justify-center'>
+          {renderMainContent()}
+        </div>
+
+        {/* Patrocinadores (solo public/sponsors) */}
+        <section className='mt-8 text-center' aria-label='Patrocinadores'>
+          <p className='text-xs uppercase tracking-wider text-muted mb-4'>
+            Patrocinadores
+          </p>
+          <div className='flex flex-wrap items-center justify-center gap-8 sm:gap-10'>
+            <Image
+              src='/sponsors/La-7incluyente.png'
+              alt='La 7 incluyente'
+              width={200}
+              height={100}
+              className='h-16 sm:h-20 w-auto object-contain'
+              loading='lazy'
+            />
+            <Image
+              src='/sponsors/Oscar.png'
+              alt='Oscar'
+              width={200}
+              height={100}
+              className='h-16 sm:h-20 w-auto object-contain'
+              loading='lazy'
+            />
+            <Image
+              src='/sponsors/Coemca.png'
+              alt='Coemca - Colectivo Empresarial Cartagüeño'
+              width={200}
+              height={100}
+              className='h-16 sm:h-20 w-auto object-contain'
+              loading='lazy'
+            />
+          </div>
+        </section>
+      </div>
+    </main>
   );
 }

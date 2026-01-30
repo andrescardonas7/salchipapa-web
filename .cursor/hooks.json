@@ -1,9 +1,19 @@
 {
-  "conversation_id": "string",
-  "generation_id": "string",
-  "model": "string",
-  "hook_event_name": "string",
-  "cursor_version": "string",
-  "workspace_roots": ["<path>"],
-  "user_email": "string | null"
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      { "command": ".cursor/hooks/before-shell.sh" }
+    ],
+    "afterShellExecution": [
+      { "command": ".cursor/hooks/after-shell-pr.sh" }
+    ],
+    "afterFileEdit": [
+      { "command": ".cursor/hooks/after-edit-format.sh" },
+      { "command": ".cursor/hooks/after-edit-tsc.sh" },
+      { "command": ".cursor/hooks/after-edit-console-warn.sh" }
+    ],
+    "stop": [
+      { "command": ".cursor/hooks/stop-console-audit.sh" }
+    ]
+  }
 }

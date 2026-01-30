@@ -1,0 +1,14 @@
+{
+  "name": "cursor-hub",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Universal installer/sync hub for .cursor rules/skills/hooks across editors (Cursor, VS Code, OpenCode, Antigravity).",
+  "type": "module",
+  "bin": {
+    "cursor-hub": "./scripts/cursor-hub.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED"
+}
