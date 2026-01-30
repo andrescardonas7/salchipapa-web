@@ -1,29 +1,31 @@
 # 🍟 Desafío Salchipapa - Plataforma de Votación
 
-Sistema de votación seguro con verificación OTP por WhatsApp para el desafío de la mejor salchipapa.
+Sistema de votación seguro con verificación OTP para el desafío de la mejor salchipapa.
 
 ## Características
 
-- ✅ **Un voto por persona**: Verificación por número de WhatsApp
-- 📱 **OTP por WhatsApp**: Códigos de verificación de 4 dígitos vía Twilio
+- ✅ **Un voto por persona**: Verificación por número de teléfono
+- 📱 **OTP**: Códigos de verificación de 4 dígitos
 - 🔒 **Seguro**: Rate limiting, hashing de datos sensibles, tokens JWT
 - 📊 **Métricas en tiempo real**: Panel de administración interno
 - 🏆 **Ranking automático**: Resultados publicables al final del reto
 - 📥 **Exportación**: CSV y JSON para auditoría
+- 🐛 **Monitoreo**: Sentry para captura de errores
 
 ## Stack Tecnológico
 
 - **Frontend/Backend**: Next.js 16 (App Router)
-- **Base de datos**: PostgreSQL (Supabase/Neon)
+- **Base de datos**: PostgreSQL (Supabase)
 - **ORM**: Prisma
-- **OTP**: Twilio WhatsApp API
+- **Rate Limiting**: Upstash Redis
+- **Monitoreo**: Sentry
 - **Hosting**: Vercel
 
 ## Requisitos Previos
 
-1. **Cuenta de Twilio** con WhatsApp Business API habilitado
-2. **Base de datos PostgreSQL** (Supabase, Neon, o similar)
-3. **Cuenta de Vercel** para despliegue
+1. **Base de datos PostgreSQL** (Supabase)
+2. **Cuenta de Vercel** para despliegue
+3. **Upstash Redis** para rate limiting (opcional)
 
 ## Configuración Local
 
@@ -43,10 +45,10 @@ Crea un archivo `.env` basado en `.env.example`:
 # Base de datos
 DATABASE_URL="postgresql://user:password@host:5432/database?schema=public"
 
-# Twilio WhatsApp
-TWILIO_ACCOUNT_SID="ACxxxxxxxxxx"
-TWILIO_AUTH_TOKEN="xxxxxxxxxx"
-TWILIO_WHATSAPP_FROM="whatsapp:+14155238886"
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL="https://xxx.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJxxx"
+SUPABASE_SERVICE_ROLE_KEY="eyJxxx"
 
 # JWT Secret (mínimo 32 caracteres)
 JWT_SECRET="tu-secreto-super-seguro-min-32-caracteres"
@@ -54,9 +56,12 @@ JWT_SECRET="tu-secreto-super-seguro-min-32-caracteres"
 # Admin password
 ADMIN_PASSWORD="tu-password-de-admin"
 
-# Opcional: Cloudflare Turnstile (captcha)
-NEXT_PUBLIC_TURNSTILE_SITE_KEY=""
-TURNSTILE_SECRET_KEY=""
+# Upstash Redis (rate limiting)
+UPSTASH_REDIS_REST_URL=""
+UPSTASH_REDIS_REST_TOKEN=""
+
+# Sentry (monitoreo de errores)
+NEXT_PUBLIC_SENTRY_DSN=""
 ```
 
 ### 3. Configurar base de datos
@@ -91,16 +96,20 @@ La aplicación estará disponible en `http://localhost:3000`
 
 En la configuración del proyecto, agrega las siguientes variables:
 
-| Variable                 | Descripción                                  |
-| ------------------------ | -------------------------------------------- |
-| `DATABASE_URL`           | URL de conexión PostgreSQL                   |
-| `TWILIO_ACCOUNT_SID`     | SID de cuenta Twilio                         |
-| `TWILIO_AUTH_TOKEN`      | Token de autenticación Twilio                |
-| `TWILIO_WHATSAPP_FROM`   | Número de WhatsApp de Twilio                 |
-| `JWT_SECRET`             | Secreto para tokens JWT                      |
-| `ADMIN_PASSWORD`         | Contraseña del panel admin                   |
-| `CRON_SECRET`            | Secreto para autenticar cron jobs (opcional) |
-| `NEXT_PUBLIC_SENTRY_DSN` | DSN de Sentry (opcional, para errores)       |
+| Variable                       | Descripción                            |
+| ------------------------------ | -------------------------------------- |
+| `DATABASE_URL`                 | URL de conexión PostgreSQL             |
+| `NEXT_PUBLIC_SUPABASE_URL`     | URL de tu proyecto Supabase            |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`| Anon key de Supabase                   |
+| `SUPABASE_SERVICE_ROLE_KEY`    | Service role key de Supabase           |
+| `JWT_SECRET`                   | Secreto para tokens JWT                |
+| `ADMIN_PASSWORD`               | Contraseña del panel admin             |
+| `UPSTASH_REDIS_REST_URL`       | URL de Upstash Redis (rate limiting)   |
+| `UPSTASH_REDIS_REST_TOKEN`     | Token de Upstash Redis                 |
+| `NEXT_PUBLIC_SENTRY_DSN`       | DSN de Sentry (monitoreo de errores)   |
+| `SENTRY_AUTH_TOKEN`            | Token para source maps (opcional)      |
+| `SENTRY_ORG`                   | Organización en Sentry                 |
+| `SENTRY_PROJECT`               | Proyecto en Sentry                     |
 
 ### 3. Deploy
 
@@ -115,10 +124,12 @@ Después del primer deploy, ejecuta el seed para cargar los negocios:
 DATABASE_URL="tu-url-de-produccion" pnpm db:seed
 ```
 
-## Sentry (opcional)
+## Sentry (Monitoreo de Errores)
 
-- Agrega `NEXT_PUBLIC_SENTRY_DSN` en `.env` / Vercel para habilitar captura de errores.
-- Para subir sourcemaps (cuando conectemos GitHub/Vercel), configura además: `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`.
+Sentry está configurado para capturar errores en cliente, servidor y edge runtime.
+
+- Agrega `NEXT_PUBLIC_SENTRY_DSN` en Vercel para habilitar captura de errores
+- Para source maps legibles, configura: `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`
 
 ## Rutas de la Aplicación
 
@@ -164,21 +175,6 @@ La lista inicial incluye:
 - Centella
 
 Para agregar más negocios, edita `prisma/seed.ts` y vuelve a ejecutar el seed.
-
-## Configuración de Twilio WhatsApp
-
-### Sandbox (Desarrollo)
-
-1. Ve a la [Consola de Twilio](https://console.twilio.com)
-2. Navega a Messaging > Try it out > Send a WhatsApp message
-3. Sigue las instrucciones para unirte al sandbox
-4. Usa el número del sandbox como `TWILIO_WHATSAPP_FROM`
-
-### Producción
-
-1. Solicita un número de WhatsApp Business en Twilio
-2. Configura las plantillas de mensaje (aprobación de Meta)
-3. Actualiza `TWILIO_WHATSAPP_FROM` con tu número aprobado
 
 ## Panel de Administración
 
