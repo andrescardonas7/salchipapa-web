@@ -2,6 +2,7 @@ import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ['prisma', '@prisma/client'],
   turbopack: {
     // Fix: when multiple lockfiles exist, Next.js may infer the wrong workspace root.
     // This must be an absolute path.
